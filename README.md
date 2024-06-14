@@ -2,10 +2,20 @@
 
 Minimal example of using PKCS#11 from Java without a real smart card.
 
+# Setup
+
+These instructions have been tested on MacOS using an M1 Mac Book Pro.
+
+This example uses [SoftHSM v2](https://github.com/opendnssec/SoftHSMv2) to
+create a virtual PKCS#11-enabled smart card, and [OpenSC](https://github.com/OpenSC/OpenSC)
+to interact with it (i.e., to import a private key and certificate into it).
+
 ```bash
 $ brew install softhsm
 $ brew install opensc
 ```
+
+This is the SoftHSM configuration file, for reference:
 
 ```bash
 $ cat /opt/homebrew/Cellar/softhsm/2.6.1/.bottle/etc/softhsm/softhsm2.conf
@@ -27,6 +37,8 @@ slots.mechanisms = ALL
 library.reset_on_fork = false
 ```
 
+# Create a private key and certificate in PEM format
+
 ```bash
 $ openssl genpkey -algorithm RSA -out private_key.pem
 ...............+......+.+++++++++++++++++++++++++++++++++++++++*...+.....+............+.+..+....+...+......+.....+....+...........+...............+..........+......+......+..+...+....+...+...+..............+......+.......+.....+.+..+++++++++++++++++++++++++++++++++++++++*.+......+..+......+......+.+............+......+..+......................+......+.....+.......+.....+...+....+.....+............+....+.....+....+..................+...+..+...+.........+.......+........+.......+......+..+.+.........+......+......+.....+...+.+.................+..................+.......+............+......+.........+......+.....+.+.....+.........+......+...+.+...........+.+.....+..........+...+..............+...+.........+..........+...........+...+......+...+......+.++++++
@@ -34,10 +46,14 @@ $ openssl genpkey -algorithm RSA -out private_key.pem
 $ openssl req -new -key private_key.pem -x509 -days 365 -out certificate.pem -subj "/C=IT/ST=IT/L=BO/O=ACME/OU=IT/CN=example.com"
 ```
 
+# Convert them into DER format
+
 ```bash
 $ openssl pkcs8 -topk8 -inform PEM -outform DER -in private_key.pem -out private_key.der -nocrypt
 $ openssl x509 -in certificate.pem -outform DER -out certificate.der
 ```
+
+# Import them into a SoftHSM token
 
 ```bash
 $ softhsm2-util --init-token --slot 0 --label "MyToken" --so-pin 1234 --pin 5678
@@ -61,6 +77,8 @@ Certificate Object; type = X.509 cert
   serial:     077B788A12B8D57AB44FE521AAB1FBF0AE0BE48E
   ID:         01
 ```
+
+This verifies that the private key and certificate have been imported:
 
 ```bash
 $ pkcs11-tool --module /opt/homebrew/Cellar/softhsm/2.6.1/lib/softhsm/libsofthsm2.so --login --pin 5678 --list-objects
