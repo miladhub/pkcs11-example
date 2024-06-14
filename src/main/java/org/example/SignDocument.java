@@ -10,9 +10,14 @@ import java.util.Enumeration;
 public class SignDocument {
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            System.err.println("Must provide PKCS#11 conf file");
+            System.exit(1);
+        }
+
         // Load the PKCS#11 provider configuration
         Provider p = Security.getProvider("SunPKCS11");
-        p = p.configure("pkcs11.cfg");
+        p = p.configure(args[0]);
         Security.addProvider(p);
 
         // Get an instance of the KeyStore
