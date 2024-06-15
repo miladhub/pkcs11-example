@@ -36,6 +36,8 @@ public class SignDocument {
             return;
         }
 
+        System.out.println("Using alias: " + alias);
+
         PrivateKey privateKey = (PrivateKey) ks.getKey(alias, "5678".toCharArray());
         X509Certificate cert = (X509Certificate) ks.getCertificate(alias);
 

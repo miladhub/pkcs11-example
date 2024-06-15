@@ -140,12 +140,99 @@ Alias found: MyCertificate
 Private Key Algorithm: RSA
 ```
 
+# Mixing certificates in one slot
+
+This is an example of using one PKCS#11 slot, mixing a primary key and a
+certificate  that was not originated from that primary key, for example in the
+case where the primary key is used for signing, and the certificate is used for
+TLS authentication.
+
+## Create two private key and two certificates in PEM format
+
+```bash
+rm *.pem *.der
+openssl genpkey -algorithm RSA -out pk_signing.pem
+openssl req -new -key pk_signing.pem -x509 -days 365 -out cert_signing.pem \
+  -subj "/C=US/ST=State/L=City/O=Organization/OU=Department/CN=example.com"
+openssl genpkey -algorithm RSA -out pk_tls.pem
+openssl req -new -key pk_tls.pem -x509 -days 365 -out cert_tls.pem \
+  -subj "/C=US/ST=State/L=City/O=Organization/OU=Department/CN=example.com"
+```
+
+## Convert them into DER format
+
+```bash
+openssl pkcs8 -topk8 -inform PEM -outform DER -in pk_signing.pem -out pk_signing.der -nocrypt
+openssl x509 -in cert_signing.pem -outform DER -out cert_signing.der
+openssl pkcs8 -topk8 -inform PEM -outform DER -in pk_tls.pem -out pk_tls.der -nocrypt
+openssl x509 -in cert_tls.pem -outform DER -out cert_tls.der
+```
+
+## Import them into a single SoftHSM token
+
+```bash
+$ softhsm2-util --init-token --slot 0 --label "MyToken" --so-pin 1234 --pin 5678
+The token has been initialized and is reassigned to slot 2129213607
+
+$ pkcs11-tool --module /opt/homebrew/Cellar/softhsm/2.6.1/lib/softhsm/libsofthsm2.so \
+  --login --pin 5678 --slot 2129213607 --write-object pk_signing.der --type privkey --id 01 --label "PK_Signing"
+
+Created private key:
+Private Key Object; RSA
+  label:      PK_Signing
+  ID:         01
+  Usage:      decrypt, sign, signRecover, unwrap
+  Access:     sensitive
+
+$ pkcs11-tool --module /opt/homebrew/Cellar/softhsm/2.6.1/lib/softhsm/libsofthsm2.so \
+  --login --pin 5678 --slot 2129213607 --write-object cert_tls.der --type cert --id 01 --label "TLS_Cert"
+
+Created certificate:
+Certificate Object; type = X.509 cert
+  label:      TLS_Cert
+  subject:    DN: C=US, ST=State, L=City, O=Organization, OU=Department, CN=example.com
+  serial:     18850D45C220E75A67229230F841179049B56F87
+  ID:         01
+```
+
+This verifies that the private key and certificate have been imported:
+
+```bash
+$ pkcs11-tool --module /opt/homebrew/Cellar/softhsm/2.6.1/lib/softhsm/libsofthsm2.so \
+  --login --pin 5678 --list-objects --slot 2129213607
+
+Certificate Object; type = X.509 cert
+  label:      TLS_Cert
+  subject:    DN: C=US, ST=State, L=City, O=Organization, OU=Department, CN=example.com
+  serial:     18850D45C220E75A67229230F841179049B56F87
+  ID:         01
+Private Key Object; RSA
+  label:      PK_Signing
+  ID:         01
+  Usage:      decrypt, sign, signRecover, unwrap
+  Access:     sensitive
+```
+
+## Sign a document from Java
+
+```bash
+$ java -cp target/pkcs11-1.0-SNAPSHOT.jar org.example.SignDocument pkcs11.cfg
+Document signed successfully.
+```
+
+## Showing key store contents:
+
+```bash
+$ java -cp target/pkcs11-1.0-SNAPSHOT.jar org.example.LoadCertificates pkcs11.cfg
+Alias found: TLS_Cert
+Private Key Algorithm: RSA
+```
+
 # Using two slots
 
-This is an example of using multiple PKCS#11 slots, for example in the case
-where one slot is used for signing, and another one for TLS authentication. 
+This is an example of using multiple PKCS#11 slots.
 
-## Create a private key two certificates in PEM format
+## Create a private key and two certificates in PEM format
 
 ```bash
 rm *.pem *.der
