@@ -20,7 +20,7 @@ public class LoadCertificates {
 
             // Get an instance of the KeyStore
             KeyStore ks = KeyStore.getInstance("PKCS11");
-            ks.load(null, "5678".toCharArray());
+            ks.load(null, "1234".toCharArray());
 
             // List aliases
             Enumeration<String> aliases = ks.aliases();

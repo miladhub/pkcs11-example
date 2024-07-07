@@ -10,8 +10,8 @@ import java.util.Enumeration;
 public class SignDocument {
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            System.err.println("Must provide PKCS#11 conf file");
+        if (args.length < 2) {
+            System.err.println("Must provide PKCS#11 conf file and alias");
             System.exit(1);
         }
 
@@ -22,23 +22,12 @@ public class SignDocument {
 
         // Get an instance of the KeyStore
         KeyStore ks = KeyStore.getInstance("PKCS11");
-        ks.load(null, "5678".toCharArray());
+        ks.load(null, "1234".toCharArray());
 
-        // Get the private key and certificate
-        Enumeration<String> aliases = ks.aliases();
-        String alias = null;
-        if (aliases.hasMoreElements()) {
-            alias = aliases.nextElement();
-        }
-
-        if (alias == null) {
-            System.out.println("No alias found in the key store.");
-            return;
-        }
-
+        String alias = args[1];
         System.out.println("Using alias: " + alias);
 
-        PrivateKey privateKey = (PrivateKey) ks.getKey(alias, "5678".toCharArray());
+        PrivateKey privateKey = (PrivateKey) ks.getKey(alias, null);
         X509Certificate cert = (X509Certificate) ks.getCertificate(alias);
 
         // Data to be signed

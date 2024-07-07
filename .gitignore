@@ -6,6 +6,6 @@ target
 .idea
 
 *.pem
-*.der
+*.p12
 
 signature.txt
