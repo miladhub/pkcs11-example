@@ -7,5 +7,7 @@ target
 
 *.pem
 *.p12
+*.crt
+*.key
 
 signature.txt
