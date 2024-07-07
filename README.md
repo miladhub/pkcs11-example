@@ -159,7 +159,7 @@ $ mvn jetty:run
 Test the HTTPS connection:
 
 ```bash
-$ java -cp target/pkcs11-1.0-SNAPSHOT.jar org.example.PKCS11HttpsClient pkcs11.cfg
+$ java -cp target/pkcs11-1.0-SNAPSHOT.jar org.example.PKCS11HttpsClient pkcs11.cfg https://localhost:8443/hello
 Response Code: 200
 Response Content: <h1>Hello Servlet</h1>session=node0i5mbom5hzrq912654pxkkalwy0
 ```
@@ -169,7 +169,7 @@ Deleting the 'tls' alias, the connection fails:
 ```bash
 $ keytool -delete -alias tls -keystore NONE -storetype PKCS11 -providerClass sun.security.pkcs11.SunPKCS11 -providerArg pkcs11.cfg -storepass 1234
 ...
-$ java -cp target/pkcs11-1.0-SNAPSHOT.jar org.example.PKCS11HttpsClient pkcs11.cfg
+$ java -cp target/pkcs11-1.0-SNAPSHOT.jar org.example.PKCS11HttpsClient pkcs11.cfg https://localhost:8443/hello
 Exception in thread "main" javax.net.ssl.SSLHandshakeException: Received fatal alert: bad_certificate
 ...
 ```
